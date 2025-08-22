@@ -1,8 +1,8 @@
 # dx-privacy-curse
-This repository contains the code used in the experiments of the paper titled "$d_x$-Privacy for Text and the Curse of Dimensionality".
+This repository contains the code used in the experiments of the paper titled "dX-Privacy for Text and the Curse of Dimensionality".
 
 ## Requirements
-- The code leverages [cupy](https://cupy.dev/) which requires a GPU and a CUDA driver enabled
+- The code leverages [cupy](https://cupy.dev/) which requires an Nvidia GPU and a CUDA driver enabled
 
 ## How to run
 ### Setup the python environment
@@ -20,7 +20,7 @@ This repository contains the code used in the experiments of the paper titled "$
 2. Run the PreProcessing.ipynb files contained in each of the code folders named fasttext, glove and word2vec.
 
 ### Execute the experiments
-Tthere are three files in each of folders named fasttext, glove and word2vec:
+There are three files in each of folders named fasttext, glove and word2vec:
 - NeighborDistances.ipynb generates the results used in Table 2, which involves computing distances between words and their k-th neighbor within the vocabulary. The code in the glove folder contains an additional section to generate the data for Figure 6.
 - CloseNeighborsDxFrequencies.ipynb generates the results used in Figure 2, which involves applying $d_x$-privacy to random words and identifying the rank (i.e., the "k" in k-th neighbor) of the word which was chosen as the replacement by the mechanism. The code in the glove and word2vec folders additionaly include the post-processing fix proposed in the paper and used for Figure 8.
 - ExponentialMechanism.ipynb generates the data used for Figure 9, where the privacy mechanism applied is the one from (Yue et al., 2021).
