@@ -1,4 +1,4 @@
-name: dx-privacy
+name: dx-privacy-curse
 channels:
   - conda-forge
   - defaults
