@@ -52,3 +52,7 @@ RUN unzip ./glove.twitter.27B.zip
 RUN rm ./glove.twitter.27B.zip
 
 RUN gzip -d GoogleNews-vectors-negative300.bin.gz
+
+# Label the image such that GitHub associates it with the repo
+LABEL org.opencontainers.image.source=https://github.com/r-carpentier/dx-privacy-curse
+LABEL org.opencontainers.image.licenses=MIT
