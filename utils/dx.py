@@ -2,7 +2,7 @@ import numpy as np
 from secrets import randbits
 import cupy as cp
 from cupyx.scipy.spatial import distance
-from utils.tools import best_uint_type
+from utils.tools import best_uint_type, rank_neighbors
 
 
 def sample_noise_vectors(
@@ -55,7 +55,7 @@ def sample_noise_vectors(
     return noises
 
 
-def noisy_embeddings_to_ids_cp_chunked(
+def noisy_embeddings_to_ids(
     embeddings: np.ndarray,
     vocabulary: np.ndarray,
     distance_metric: str = "euclidean",
@@ -65,7 +65,7 @@ def noisy_embeddings_to_ids_cp_chunked(
     Returns a numpy array of shape (embeddings.shape[0], vocabulary.shape[0]) where
     array[i][j] contains the distance between the i-th embedding and the j-th vocabulary
     element.
-    This version leverages cupy and performs the computation chunk-by-chunk to avoid VRAM overload.
+    We leverage cupy and performs the computation chunk-by-chunk to avoid VRAM overload.
     """
     number_of_words = embeddings.shape[0]
 
@@ -92,11 +92,49 @@ def noisy_embeddings_to_ids_cp_chunked(
     return noisy_words_ids
 
 
-def noisy_embeddings_to_ids(
-    embeddings: np.ndarray, vocabulary: np.ndarray, distance_metric: str
+def noisy_embeddings_to_ids_with_post_processing_fix(
+    embeddings: np.ndarray,
+    vocabulary: np.ndarray,
+    dx_constant: float,
+    epsilon: int,
+    distance_metric: str = "euclidean",
 ) -> np.ndarray:
-    """Performs a nearest neighbor search of the embeddings against the vocabulary.
-    Returns a numpy array of shape (embeddings.shape[0], vocabulary.shape[0]) where
-    array[i][j] contains the distance between the i-th embedding and the j-th vocabulary
-    element."""
-    return noisy_embeddings_to_ids_cp_chunked(embeddings, vocabulary, distance_metric)
+    """Applies the post-processing fix proposed in the paper.
+
+    Args:
+        embeddings (np.ndarray): A two-dimensional array containing the embeddings we want to process.
+        vocabulary (np.ndarray): A two-dimensional array containing all the embeddings of the vocabulary
+            to compute the fix against.
+        dx_constant (float): The c constant in the formula of the paper.
+        epsilon (int): The epsilon value in the dx-privacy formula.
+        distance_metric (str, optional): The distance metric to use for ranking elements of the vocabulary. Defaults to "euclidean".
+
+    Returns:
+        np.ndarray: A one-dimensional numpy array containing the ids of the sampled replacements.
+    """
+    input_size = embeddings.shape[0]
+    vocab_size = vocabulary.shape[0]
+
+    # We first find the nearest neighbors of each of the noisy embeddings, called the "pivots" here
+    pivot_word_ids = noisy_embeddings_to_ids(embeddings, vocabulary, distance_metric)
+    pivot_word_embeddings = vocabulary[pivot_word_ids]
+
+    del pivot_word_ids  # Save RAM
+
+    # Rank the elements of the vocabulary according to their distance with each of the pivot embeddings
+    embeddings_neighbors_ranked = rank_neighbors(
+        pivot_word_embeddings, vocabulary, distance_metric
+    )
+
+    # Compute probabilities
+    probabilities = np.exp(-dx_constant * epsilon * embeddings_neighbors_ranked)
+
+    # Normalize probabilities along the last axis
+    probabilities /= probabilities.sum(axis=-1, keepdims=True)
+
+    # Sample one element for each embedding and return their ids
+    noisy_ids = np.empty((input_size), dtype=best_uint_type(vocab_size))
+    for i in range(input_size):
+        noisy_ids[i] = np.random.choice(vocab_size, size=1, p=probabilities[i]).item()
+
+    return noisy_ids
