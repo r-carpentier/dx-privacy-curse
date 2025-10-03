@@ -11,9 +11,13 @@ def sample_noise_vectors(
     shape2: int,
     epsilon: float,
     dtype: np.dtype = np.float32,
+    seed: int = -1,
 ) -> np.ndarray:
     """Sample a noise vector of shape (shape1, shape2, dimension) as a numpy array."""
-    rng = np.random.default_rng(randbits(128))
+    if seed == -1:
+        rng = np.random.default_rng(randbits(128))
+    else:
+        rng = np.random.default_rng(seed)
 
     # Generate an array of noise vectors sampled from the multivariate normal distribution
     # https://numpy.org/doc/1.26/reference/random/generated/numpy.random.Generator.multivariate_normal.html
