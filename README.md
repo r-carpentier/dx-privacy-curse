@@ -2,7 +2,6 @@
 
 Paper title: dX-Privacy for Text and the Curse of Dimensionality
 
-
 Requested Badge(s):
   - [x] **Available**
   - [x] **Functional**
@@ -17,6 +16,8 @@ It contains the code to reproduce the results of the Figures and Tables of the p
 - We compute distances between elements of the vocabularies to shed light on the problem exposed in the paper
 - We propose a fix for the dx-privacy mechanism and compare it with the mechanism from (Yue et al., 2021)
 
+Because processing the complete vocabularies requires substantial resources, we provide two versions for reproducing the experiments. The `minimal` version includes a lightweight Docker image with vocabulary subsets, which significantly speeds up the experiments. The `full` version contains the complete vocabularies.
+
 ### Security/Privacy Issues and Ethical Concerns
 
 To the best of our knowledge, this artifact does not pose any Security/Privacy Issues nor Ethical Concerns.
@@ -24,20 +25,28 @@ To the best of our knowledge, this artifact does not pose any Security/Privacy I
 ## Basic Requirements
 
 ### Hardware Requirements
+`minimal` reproduction:
+- 11GB of disk storage
+- NVIDIA GPU card with at least 9GB of VRAM
+- 6GB of RAM
 
-- NVIDIA GPU card
+`full` reproduction:
+- 60GB of disk storage
+- NVIDIA GPU card with at least 16GB of VRAM
+- 250GB of RAM
 
-The machine used to run the experiments has: an Nvidia H100, 1TB of RAM. 
+The machine used to run the experiments has: an Nvidia H100 (80GB of VRAM), 1TB of RAM. 
 ### Software Requirements
 
 - Docker Engine 28.3.3 (should work with any recent version)
 - git 2.39.5 (any version should work)
-- NVIDIA Driver 575.57.08 or higher (matching GPU card)
+- NVIDIA Driver 575.57.08 or higher (any recent version matching your GPU card should work)
+- CUDA Version 12.9 (should work with CUDA version 11.2 or later)
 - NVIDIA Container Toolkit 1.17.8 (any recent version should work)
 
 The experiments were run on Ubuntu 24.04 (should work with any OS having Docker). The interpreter used is Python 3.11.9. All Python dependencies can be found in the `environment.yml` file.
 
-The following datasets are used for the experiments (the Docker image contains all of them):
+The following datasets (i.e., word-embeddings vocabularies) are used for the experiments (See Table 1 of the paper for more details). The `minimal` Docker image includes one subset from each dataset, and each subset consists of 50,000 elements. The `full` Docker image contains the full datasets:
 
 | Name          | Direct Link                                                  | Homepage                                                     | Extracted files                                              |
 | ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -47,7 +56,11 @@ The following datasets are used for the experiments (the Docker image contains a
 | Word2vec      | [Link](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing) | [Link](https://code.google.com/archive/p/word2vec/), look for "The archive is available here:" | GoogleNews-vectors-negative300.bin                           |
 
 ### Estimated Time and Storage Consumption
+`minimal` reproduction:
+- The overall compute time required to run all the artifact's code to reproduce all experiments is expected to be 20 minutes.
+- The overall disk space consumed by the artifact is around 11GB (Docker Image's size).
 
+`full` reproduction:
 - The overall compute time required to run all the artifact's code to reproduce all experiments is expected to be 24 hours.
 - The overall disk space consumed by the artifact is around 60GB (30GB of Docker image + 30GB of processed datasets).
 
@@ -57,30 +70,29 @@ The following datasets are used for the experiments (the Docker image contains a
 To access this code repository, go to [https://github.com/r-carpentier/dx-privacy-curse/tree/main](https://github.com/r-carpentier/dx-privacy-curse/tree/main).
 
 ### Set up the environment
-1. Clone the repository and download the Docker image with:
+1. Clone the repository:
 ```bash
 git clone https://github.com/r-carpentier/dx-privacy-curse.git
 cd dx-privacy-curse
-docker pull ghcr.io/r-carpentier/dx-privacy-curse:latest
 ```
 
-2. Launch the Docker container with
+2. Choose between the `minimal` and `full` Docker image and run the container:
 ```bash
-docker run --rm -it -p 8888:8888 -v ${PWD}:/dx-privacy-curse -w /dx-privacy-curse --gpus all --entrypoint bash ghcr.io/r-carpentier/dx-privacy-curse
+export TAG=minimal    # or TAG=full
+docker run --rm -it -p 8888:8888 -v ${PWD}:/dx-privacy-curse -w /dx-privacy-curse --gpus all --entrypoint bash ghcr.io/r-carpentier/dx-privacy-curse:$TAG
 ```
+(Optionally, change the port if 8888 is already in use on your machine, e.g. `-p 8999:8888`)
 
 3. Then, start a jupyter notebook within the Docker container:
 ```bash
 conda run --no-capture-output -n dx-privacy jupyter notebook --ip 0.0.0.0 --no-browser
 ```
-4. Click on the link mentionned in the output of the jupyter command to open your web browser. The link is similar to `http://127.0.0.1:8888/tree?token=...`
+4. Click on the link mentionned in the output of the jupyter command to open your web browser. The link is similar to `http://127.0.0.1:8888/tree?token=...`. (Manually replace the port if another one was chosen at Step 2.)
 
-5. Run the PreProcessing.ipynb notebooks contained within each of the code folders named fasttext, glove and word2vec.
+5. (`full` Docker image only) Run the PreProcessing.ipynb notebooks contained within each of the code folders named fasttext, glove and word2vec.
 
 ### Testing the Environment
-To test the environment after setup, open the notebook glove/textSanitization.ipynb. Execute alls cells one by one. This notebook displays an example of how to sanitize a short text sample. Because the process is randomized, the exact output will be different.
-
-Output example: 'maria gonzalez , a patients at riverside abortions , was diagnosed with depression on november 6 , ersguterjunge . she currently illiterate at 19,300 oak drive , san barbara . pedro whose there bizarre constraint and is undergoing weekly therapy sessions .'
+To test the environment after setup, open the notebook glove/textSanitization.ipynb. Execute alls cells one by one. This notebook displays an example of how to sanitize a short text sample. While the sanitization mechanism is randomized, the seed for this example is pre-set and the output should be: 'maria gonzalez , most patients at princes hospitals , were diagnosed with depression on june 5 , 2023 . however currently older at br chestnut cars , san francisco . maria have were prescribed medication other considered undergoing weekly treatments sessions .'
 
 ## Artifact Evaluation
 ### Main Results and Claims
