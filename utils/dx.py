@@ -13,7 +13,20 @@ def sample_noise_vectors(
     dtype: np.dtype = np.float32,
     seed: int = -1,
 ) -> np.ndarray:
-    """Sample a noise vector of shape (shape1, shape2, dimension) as a numpy array."""
+    """Sample shape1*shape2 noise vectors of dimensions _dimension_ according to the
+    sampling mechanism from (Feyisetan et al., 2020) and (Qu et al., 2021).
+
+    Args:
+        dimension (int): The number of dimensions for the noise vectors. Also called hidden size.
+        shape1 (int): The first shape of the array of noise vectors
+        shape2 (int): The second shape of the array of noise vectors
+        epsilon (float): The epsilon value in the dx-privacy formula.
+        dtype (Type[np.floating], optional): The data type of the vectors. Defaults to np.float32.
+        seed (int, optional): The seed used for the random sampling. Defaults to -1 which uses a random seed.
+
+    Returns:
+        np.ndarray: The noise vector of shape (shape1, shape2, dimension)
+    """
     if seed == -1:
         rng = np.random.default_rng(randbits(128))
     else:
@@ -66,10 +79,16 @@ def noisy_embeddings_to_ids(
     chunk_size: int = -1,
 ) -> np.ndarray:
     """Performs a nearest neighbor search of the embeddings against the vocabulary.
-    Returns a numpy array of shape (embeddings.shape[0], vocabulary.shape[0]) where
-    array[i][j] contains the distance between the i-th embedding and the j-th vocabulary
-    element.
-    We leverage cupy and performs the computation chunk-by-chunk to avoid VRAM overload.
+
+    Args:
+        embeddings (np.ndarray): A two-dimensional array containing the embeddings we want to process.
+        vocabulary (np.ndarray): A two-dimensional array containing all the embeddings of the vocabulary
+            to compute the nearest neighbor search against.
+        distance_metric (str, optional): The distance metric to use for ranking elements of the vocabulary. Defaults to "euclidean".
+
+    Returns:
+        np.ndarray: A one-dimensional array of shape (embeddings.shape[0]) containing the vocabulary index of the
+       nearest neighbor for each embedding.
     """
     number_of_words = embeddings.shape[0]
 
